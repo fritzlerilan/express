@@ -5,7 +5,7 @@ const {
     ACCESS_TOKEN,
     NO_PENDING_PAYMENTS,
     CARD_PAYMENT_DESCRIPTION,
-    HOOK_BIN_URI,
+    NOTIFICATION_URL,
 } = process.env;
 
 mercadopago.configure({
@@ -63,7 +63,7 @@ export const obtainInitPointUrl = async (req, res) => {
     const preference = {
         //Este valor podria ser util para dejar asentado el username del pagador ya que queda registrado en la api de mercadopago.
         external_reference: username,
-        notification_url: HOOK_BIN_URI || "",
+        notification_url: NOTIFICATION_URL + `/${username}`,
         // El pago solo puede resultar aprobado o rechazado.
         binary_mode: Boolean(NO_PENDING_PAYMENTS) || true,
         // El valor del atributo aparecerá en el resumen de la tarjeta de tu comprador
@@ -79,14 +79,37 @@ export const obtainInitPointUrl = async (req, res) => {
         ],
     };
     const responsePreference = await mercadopago.preferences.create(preference);
+    console.log(responsePreference);
     const { init_point } = responsePreference.body;
     res.status(201).json({ result: { init_point }, statusCode: 201 });
 };
 
 export const receiveNotification = async (req, res) => {
-    const params = req.params;
-    console.log("Payed Successfully");
-    console.log(params);
+    const { username } = req.params;
+    const data = req.body;
+
+    if (data.hasOwnProperty("topic")) {
+        console.log("Payment created successfully.");
+        res.status(200).send("");
+        return;
+    }
+
+    const {
+        type,
+        data: [id],
+        date_created,
+    } = data;
+
+    console.log({
+        id,
+        type,
+        date_created,
+        username,
+        message: "Payed successfully.",
+    });
+
+    // Aqui se necesita ejecutar el trigger para activar la cuenta a la db de firebase con el dato de username
+
     res.status(200).send("");
 };
 
@@ -102,7 +125,7 @@ export const paymentInfo = async (req, res) => {
         console.log(`Consulta de pago: ${id}. Error: ${error.message}`);
         res.status(400).json({
             message: "Bad Request",
-            statusCode: 400
+            statusCode: 400,
         });
     }
 };
