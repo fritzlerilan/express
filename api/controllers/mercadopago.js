@@ -12,14 +12,35 @@ mercadopago.configure({
     access_token: ACCESS_TOKEN,
 });
 
-export const checkSubscription = async (req, res, next) => {
-    const { username } = req.params;
+export const checkPastPayments = async (username) => {
     const url = `https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&external_reference=${username}`;
     const response = await axios.get(url).catch(function (error) {
-        res.json({ message: error, status: 500 });
+        console.log(error);
         return;
     });
     const payments = response.data.results;
+    return payments;
+};
+
+export const paymentsController = async (req, res) => {
+    const { username } = req.params;
+    const payments = await checkPastPayments(username);
+    const formatedPayments = payments.map((payment) => {
+        const { id, status, date_approved, status_detail } = payment;
+        return {
+            id,
+            status,
+            date_approved,
+            status_detail,
+        };
+    });
+    res.json({ payments: formatedPayments });
+};
+
+export const checkSubscription = async (req, res, next) => {
+    const { username } = req.params;
+
+    const payments = await checkPastPayments(username);
 
     if (payments.length > 0) {
         const lastPayment = payments[0];
@@ -70,8 +91,12 @@ export const receiveNotification = async (req, res) => {
 
 export const paymentInfo = async (req, res) => {
     const { id } = req.params;
-    const uri = `https://api.mercadopago.com/v1/payments/${id}`;
-    const response = await axios.get(uri).data;
-    const { external_reference, status, date_approved } = response;
-    res.json({ external_reference, status, date_approved });
+    try {
+        const uri = `https://api.mercadopago.com/v1/payments/${id}`;
+        const response = await axios.get(uri).data;
+        const { external_reference, status, date_approved } = response;
+        res.json({ external_reference, status, date_approved });
+    } catch (error) {
+        console.log(error.message);
+    }
 };
