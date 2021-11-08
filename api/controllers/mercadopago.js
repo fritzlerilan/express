@@ -34,7 +34,7 @@ export const paymentsController = async (req, res) => {
             status_detail,
         };
     });
-    res.json({ payments: formatedPayments });
+    res.json({ payments: formatedPayments, statusCode: 200 });
 };
 
 export const checkSubscription = async (req, res, next) => {
@@ -59,7 +59,7 @@ export const checkSubscription = async (req, res, next) => {
 };
 
 export const obtainInitPointUrl = async (req, res) => {
-    const { username } = req.body;
+    const { username } = req.params;
     const preference = {
         //Este valor podria ser util para dejar asentado el username del pagador ya que queda registrado en la api de mercadopago.
         external_reference: username,
