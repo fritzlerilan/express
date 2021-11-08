@@ -40,26 +40,38 @@ export const paymentsController = async (req, res) => {
 export const checkSubscription = async (req, res, next) => {
     const { username } = req.params;
 
+    if (!username) {
+        res.sendStatus(400);
+        return;
+    }
     const payments = await checkPastPayments(username);
 
     if (payments.length > 0) {
         const lastPayment = payments[0];
         const { date_approved, id } = lastPayment;
-        const created = new Date(date_approved);
-        res.json({
-            result: {
-                id,
-                created,
-            },
-            statusCode: 200,
-        });
-        return;
+        const created = new Date(date_approved).getTime();
+        const actualDay = new Date().getTime();
+        const diff = (actualDay - created) / (1000 * 60 * 60 * 24);
+        const remainingDays = 30 - diff;
+
+        if (remainingDays > 0) {
+            res.status(200).json({
+                result: {
+                    id,
+                    created,
+                    remainingDays
+                },
+                statusCode: 200,
+            });
+            return;
+        }
     }
     next();
 };
 
 export const obtainInitPointUrl = async (req, res) => {
     const { username } = req.params;
+
     const preference = {
         //Este valor podria ser util para dejar asentado el username del pagador ya que queda registrado en la api de mercadopago.
         external_reference: username,
@@ -95,10 +107,10 @@ export const receiveNotification = async (req, res) => {
 
     const {
         type,
-        data: {id},
+        data: { id },
         date_created,
     } = data;
-
+    // Para propocitos de debugueo
     console.log({
         id,
         type,
