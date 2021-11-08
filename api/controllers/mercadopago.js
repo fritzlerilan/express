@@ -16,7 +16,7 @@ export const checkPastPayments = async (username) => {
     const url = `https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&external_reference=${username}`;
     const response = await axios.get(url).catch(function (error) {
         console.log(error);
-        return;
+        return [];
     });
     const payments = response.data.results;
     return payments;
@@ -47,13 +47,15 @@ export const checkSubscription = async (req, res, next) => {
         const { date_approved, id } = lastPayment;
         const created = new Date(date_approved);
         res.json({
-            id,
-            created,
+            result: {
+                id,
+                created,
+            },
+            statusCode: 200,
         });
         return;
-    } else {
-        next();
     }
+    next();
 };
 
 export const obtainInitPointUrl = async (req, res) => {
@@ -78,25 +80,29 @@ export const obtainInitPointUrl = async (req, res) => {
     };
     const responsePreference = await mercadopago.preferences.create(preference);
     const { init_point } = responsePreference.body;
-    res.json({
-        init_point,
-    });
+    res.status(201).json({ result: { init_point }, statusCode: 201 });
 };
 
 export const receiveNotification = async (req, res) => {
     const params = req.params;
     console.log("Payed Successfully");
-    res.json({ params });
+    console.log(params);
+    res.status(200).send("");
 };
 
 export const paymentInfo = async (req, res) => {
     const { id } = req.params;
     try {
         const uri = `https://api.mercadopago.com/v1/payments/${id}`;
-        const response = await axios.get(uri).data;
-        const { external_reference, status, date_approved } = response;
-        res.json({ external_reference, status, date_approved });
+        const response = await axios.get(uri);
+        const data = await response.data;
+        const { external_reference, status, date_approved } = data;
+        res.status(200).json({ external_reference, status, date_approved });
     } catch (error) {
-        console.log(error.message);
+        console.log(`Consulta de pago: ${id}. Error: ${error.message}`);
+        res.status(400).json({
+            message: "Bad Request",
+            statusCode: 400
+        });
     }
 };
