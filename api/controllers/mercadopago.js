@@ -79,7 +79,6 @@ export const obtainInitPointUrl = async (req, res) => {
         ],
     };
     const responsePreference = await mercadopago.preferences.create(preference);
-    console.log(responsePreference);
     const { init_point } = responsePreference.body;
     res.status(201).json({ result: { init_point }, statusCode: 201 });
 };
@@ -96,7 +95,7 @@ export const receiveNotification = async (req, res) => {
 
     const {
         type,
-        data: [id],
+        data: {id},
         date_created,
     } = data;
 
