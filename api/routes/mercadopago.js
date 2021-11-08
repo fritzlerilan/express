@@ -14,6 +14,6 @@ axios.defaults.headers.common["Authorization"] =
 
 export const MPRouter = express.Router();
 
-MPRouter.post("/checkout", [checkSubscription], obtainInitPointUrl);
+MPRouter.post("/checkout/:username", [checkSubscription], obtainInitPointUrl);
 MPRouter.post("/notification", receiveNotification);
 MPRouter.get("/ticket/:id", paymentInfo);

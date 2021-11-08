@@ -13,7 +13,7 @@ mercadopago.configure({
 });
 
 export const checkSubscription = async (req, res, next) => {
-    const { username } = req.body;
+    const { username } = req.params;
     const url = `https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&external_reference=${username}`;
     const response = await axios.get(url).catch(function (error) {
         res.json({ message: error, status: 500 });
@@ -30,8 +30,9 @@ export const checkSubscription = async (req, res, next) => {
             created,
         });
         return;
+    } else {
+        next();
     }
-    next();
 };
 
 export const obtainInitPointUrl = async (req, res) => {
